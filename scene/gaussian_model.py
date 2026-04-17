@@ -47,28 +47,28 @@ def get_frustum_mask(points: torch.Tensor, cameras: List[Camera], near: float = 
         [cam.world_view_transform for cam in cameras], dim=0
     ).transpose(1, 2)
 
-    ones = torch.ones_like(points[:, 0]).unsqueeze(-1)
-    # homo_points: (N, 4)
-    homo_points = torch.cat([points, ones], dim=-1)
-
-    # uv_points: (n_view, N, 4, 4)
-    # Apply batch matrix multiplication to get uv_points for all cameras
-    view_points = einsum(view_matrices, homo_points, "n_view b c, N c -> n_view N b")
-    view_points = view_points[:, :, :3]
-
-    uv_points = einsum(intrinsics, view_points, "n_view b c, n_view N c -> n_view N b")
-
-    z = uv_points[:, :, -1:]
-    uv_points = uv_points[:, :, :2] / z
-    u, v = uv_points[:, :, 0], uv_points[:, :, 1]
-
-    # Optionally, we can apply near-far culling
-    # Apply near-far culling
-    depth = view_points[:, :, -1]
-    cull_near_fars = (depth >= near) & (depth <= far)
-
-    # Apply frustum mask
-    mask = torch.any(cull_near_fars & (u >= 0) & (u <= W-1) & (v >= 0) & (v <= H-1), dim=0)
+    N = points.shape[0]
+    batch_size = 50000  # Adjust batch size based on available GPU memory
+    masks = []
+    for i in range(0, N, batch_size):
+        batch_points = points[i:i+batch_size]
+        ones = torch.ones_like(batch_points[:, 0]).unsqueeze(-1)
+        # homo_points: (N_batch, 4)
+        homo_points_batch = torch.cat([batch_points, ones], dim=-1)
+        # Apply batch matrix multiplication to get uv_points for all cameras
+        view_points = einsum(view_matrices, homo_points_batch, "n_view b c, N c -> n_view N b")
+        view_points = view_points[:, :, :3]
+        uv_points = einsum(intrinsics, view_points, "n_view b c, n_view N c -> n_view N b")
+        z = uv_points[:, :, -1:]
+        uv_points = uv_points[:, :, :2] / z
+        u, v = uv_points[:, :, 0], uv_points[:, :, 1]
+        # Apply near-far culling
+        depth = view_points[:, :, -1]
+        cull_near_fars = (depth >= near) & (depth <= far)
+        # Apply frustum mask
+        mask_batch = torch.any(cull_near_fars & (u >= 0) & (u <= W-1) & (v >= 0) & (v <= H-1), dim=0)
+        masks.append(mask_batch)
+    mask = torch.cat(masks, dim=0)
     return mask
 
 
