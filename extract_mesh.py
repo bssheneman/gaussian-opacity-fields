@@ -12,6 +12,7 @@ import numpy as np
 import trimesh
 from tetranerf.utils.extension import cpp
 from utils.tetmesh import marching_tetrahedra
+from time import time
 
 @torch.no_grad()
 def evaluage_alpha(points, views, gaussians, pipeline, background, kernel_size, return_color=False):
@@ -48,9 +49,13 @@ def marching_tetrahedra_with_binary_search(model_path, name, iteration, views, g
     else:
         # create cell and save cells
         print("create cells and save")
+        start_time = time()
         cells = cpp.triangulate(points)
+        print(f"created cells in {time() - start_time} seconds")
         # we should filter the cell if it is larger than the gaussians
+        start_time = time()
         torch.save(cells, os.path.join(render_path, "cells.pt"))
+        print(f"saved cells in {time() - start_time} seconds")
     
     # evaluate alpha
     alpha = evaluage_alpha(points, views, gaussians, pipeline, background, kernel_size)
