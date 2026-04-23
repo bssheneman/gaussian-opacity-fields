@@ -17,6 +17,7 @@ from scene.dataset_readers import sceneLoadTypeCallbacks
 from scene.gaussian_model import GaussianModel
 from arguments import ModelParams
 from utils.camera_utils import cameraList_from_camInfos, camera_to_JSON
+from time import time
 
 class Scene:
 
@@ -73,9 +74,13 @@ class Scene:
 
         for resolution_scale in resolution_scales:
             print("Loading Training Cameras")
+            start_time = time()
             self.train_cameras[resolution_scale] = cameraList_from_camInfos(scene_info.train_cameras, resolution_scale, args)
+            print (f"Loaded in {time() - start_time} seconds")
             print("Loading Test Cameras")
+            start_time = time()
             self.test_cameras[resolution_scale] = cameraList_from_camInfos(scene_info.test_cameras, resolution_scale, args)
+            print (f"Loaded in {time() - start_time} seconds")
 
         if self.loaded_iter:
             self.gaussians.load_ply(os.path.join(self.model_path,

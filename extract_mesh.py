@@ -139,14 +139,15 @@ def extract_mesh(dataset : ModelParams, iteration : int, pipeline : PipelinePara
         gaussians = GaussianModel(dataset.sh_degree)
         scene = Scene(dataset, gaussians, load_iteration=iteration, shuffle=False)
         
+        start_time = time()
         gaussians.load_ply(os.path.join(dataset.model_path, "point_cloud", f"iteration_{iteration}", "point_cloud.ply"))
+        print(f"Loaded point cloud in {time() - start_time} seconds")
         
         bg_color = [1,1,1] if dataset.white_background else [0, 0, 0]
         background = torch.tensor(bg_color, dtype=torch.float32, device="cuda")
         kernel_size = dataset.kernel_size
         
         cams = scene.getTrainCameras()
-        print(f"Prepared marching tetrahedra in {time() - start_time} seconds")
         marching_tetrahedra_with_binary_search(dataset.model_path, "test", iteration, cams, gaussians, pipeline, background, kernel_size, filter_mesh, texture_mesh, near, far)
 
 if __name__ == "__main__":

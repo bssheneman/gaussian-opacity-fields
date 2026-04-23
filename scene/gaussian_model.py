@@ -67,7 +67,6 @@ def get_frustum_mask(points: torch.Tensor, cameras: List[Camera], near: float = 
         # Apply near-far culling
         depth = view_points[:, :, -1]
         cull_near_fars = (depth >= near) & (depth <= far)
-        print(f" Culled {np.count_nonzero(cull_near_fars == 0)} points")
         # Apply frustum mask
         mask_batch = torch.any(cull_near_fars & (u >= 0) & (u <= W-1) & (v >= 0) & (v <= H-1), dim=0)
         masks.append(mask_batch)
