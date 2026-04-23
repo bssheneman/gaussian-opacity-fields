@@ -134,11 +134,11 @@ def marching_tetrahedra_with_binary_search(model_path, name, iteration, views, g
     
 
 def extract_mesh(dataset : ModelParams, iteration : int, pipeline : PipelineParams, filter_mesh : bool, texture_mesh : bool, near : float, far : float):
-    start_time = time()
     with torch.no_grad():
         gaussians = GaussianModel(dataset.sh_degree)
         scene = Scene(dataset, gaussians, load_iteration=iteration, shuffle=False)
         
+        print("Loading point cloud")
         start_time = time()
         gaussians.load_ply(os.path.join(dataset.model_path, "point_cloud", f"iteration_{iteration}", "point_cloud.ply"))
         print(f"Loaded point cloud in {time() - start_time} seconds")
@@ -151,7 +151,6 @@ def extract_mesh(dataset : ModelParams, iteration : int, pipeline : PipelinePara
         marching_tetrahedra_with_binary_search(dataset.model_path, "test", iteration, cams, gaussians, pipeline, background, kernel_size, filter_mesh, texture_mesh, near, far)
 
 if __name__ == "__main__":
-    start_time = time()
     # Set up command line argument parser
     parser = ArgumentParser(description="Testing script parameters")
     model = ModelParams(parser, sentinel=True)
@@ -171,5 +170,4 @@ if __name__ == "__main__":
     torch.manual_seed(0)
     torch.cuda.set_device(torch.device("cuda:0"))
     
-    print(f"Setup in {time() - start_time} seconds")
     extract_mesh(model.extract(args), args.iteration, pipeline.extract(args), args.filter_mesh, args.texture_mesh, args.near, args.far)

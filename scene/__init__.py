@@ -41,6 +41,8 @@ class Scene:
         self.train_cameras = {}
         self.test_cameras = {}
 
+        print("Loading scene info")
+        start_time = time()
         if os.path.exists(os.path.join(args.source_path, "sparse")):
             scene_info = sceneLoadTypeCallbacks["Colmap"](args.source_path, args.images, args.eval)
         elif os.path.exists(os.path.join(args.source_path, "transforms_train.json")):
@@ -51,6 +53,7 @@ class Scene:
             scene_info = sceneLoadTypeCallbacks["Multi-scale"](args.source_path, args.white_background, args.eval, args.load_allres)
         else:
             assert False, "Could not recognize scene type!"
+        print(f"Loaded scene info in {time() - start_time} seconds")
 
         if not self.loaded_iter:
             with open(scene_info.ply_path, 'rb') as src_file, open(os.path.join(self.model_path, "input.ply") , 'wb') as dest_file:
@@ -76,11 +79,11 @@ class Scene:
             print("Loading Training Cameras")
             start_time = time()
             self.train_cameras[resolution_scale] = cameraList_from_camInfos(scene_info.train_cameras, resolution_scale, args)
-            print (f"Loaded in {time() - start_time} seconds")
+            print (f"Loaded training cameras in {time() - start_time} seconds")
             print("Loading Test Cameras")
             start_time = time()
             self.test_cameras[resolution_scale] = cameraList_from_camInfos(scene_info.test_cameras, resolution_scale, args)
-            print (f"Loaded in {time() - start_time} seconds")
+            print (f"Loaded test cameras in {time() - start_time} seconds")
 
         if self.loaded_iter:
             self.gaussians.load_ply(os.path.join(self.model_path,

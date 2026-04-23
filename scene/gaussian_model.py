@@ -71,7 +71,6 @@ def get_frustum_mask(points: torch.Tensor, cameras: List[Camera], near: float = 
         mask_batch = torch.any(cull_near_fars & (u >= 0) & (u <= W-1) & (v >= 0) & (v <= H-1), dim=0)
         masks.append(mask_batch)
     mask = torch.cat(masks, dim=0)
-    print(f"Got frustum mask in {time() - start_time} seconds")
     return mask
 
 
@@ -434,7 +433,6 @@ class GaussianModel:
 
     @torch.no_grad()
     def get_tetra_points(self, views: List[Camera], near: float = 0.02, far: float = 1e6):
-        start_time = time()
         M = trimesh.creation.box()
         M.vertices *= 2
         
@@ -463,8 +461,10 @@ class GaussianModel:
         vertices_scale = torch.cat([scale_corner, scale], dim=0)
         
         # Mask out vertices outside of context views
-        print(f"get_tetra_points to get_frustum_mask in {time() - start_time} seconds")
+        print("Getting frustum mask")
+        start_time = time()
         vertex_mask = get_frustum_mask(vertices, views, near, far)
+        print(f"Got frustum mask in {time() - start_time} seconds")
         return vertices[vertex_mask], vertices_scale[vertex_mask]
     
     def reset_opacity(self):
