@@ -26,9 +26,11 @@ from scene.appearance_network import AppearanceNetwork
 from scene.cameras import Camera
 from einops import einsum
 from typing import List
+from time import time
 
 @torch.no_grad()
 def get_frustum_mask(points: torch.Tensor, cameras: List[Camera], near: float = 0.02, far: float = 1e6):
+    start_time = time()
     H, W = cameras[0].image_height, cameras[0].image_width
 
     intrinsics = torch.stack(
@@ -65,10 +67,12 @@ def get_frustum_mask(points: torch.Tensor, cameras: List[Camera], near: float = 
         # Apply near-far culling
         depth = view_points[:, :, -1]
         cull_near_fars = (depth >= near) & (depth <= far)
+        print(f" Culled {np.count_nonzero(not cull_near_fars)} points")
         # Apply frustum mask
         mask_batch = torch.any(cull_near_fars & (u >= 0) & (u <= W-1) & (v >= 0) & (v <= H-1), dim=0)
         masks.append(mask_batch)
     mask = torch.cat(masks, dim=0)
+    print(f"Got frustum mask in {time() - start_time} seconds")
     return mask
 
 
@@ -431,6 +435,7 @@ class GaussianModel:
 
     @torch.no_grad()
     def get_tetra_points(self, views: List[Camera], near: float = 0.02, far: float = 1e6):
+        start_time = time()
         M = trimesh.creation.box()
         M.vertices *= 2
         
@@ -459,6 +464,7 @@ class GaussianModel:
         vertices_scale = torch.cat([scale_corner, scale], dim=0)
         
         # Mask out vertices outside of context views
+        print(f"get_tetra_points to get_frustum_mask in {time() - start_time} seconds")
         vertex_mask = get_frustum_mask(vertices, views, near, far)
         return vertices[vertex_mask], vertices_scale[vertex_mask]
     
