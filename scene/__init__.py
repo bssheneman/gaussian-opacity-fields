@@ -85,13 +85,18 @@ class Scene:
             self.test_cameras[resolution_scale] = cameraList_from_camInfos(scene_info.test_cameras, resolution_scale, args)
             print (f"Loaded test cameras in {time() - start_time} seconds")
 
+        start_time = time()
         if self.loaded_iter:
+            print("Loading gaussians")
             self.gaussians.load_ply(os.path.join(self.model_path,
                                                            "point_cloud",
                                                            "iteration_" + str(self.loaded_iter),
                                                            "point_cloud.ply"))
+            print(f"Loaded gaussians in {time() - start_time} seconds")
         else:
+            print("Creating gaussians")
             self.gaussians.create_from_pcd(scene_info.point_cloud, self.cameras_extent)
+            print(f"Created gaussians in {time() - start_time} seconds")
 
     def save(self, iteration):
         point_cloud_path = os.path.join(self.model_path, "point_cloud/iteration_{}".format(iteration))
